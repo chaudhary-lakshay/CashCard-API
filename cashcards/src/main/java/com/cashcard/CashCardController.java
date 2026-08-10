@@ -43,7 +43,7 @@ public class CashCardController {
 	private ResponseEntity<Void> createCashCard(@RequestBody CashCard newCashCardRequest, UriComponentsBuilder ucb,
 			Principal principal) {
 		CashCard cashCardWithOwner = new CashCard(null, newCashCardRequest.amount(), principal.getName());
-		CashCard savedCashCard = cashCardRepository.save(newCashCardRequest);
+		CashCard savedCashCard = cashCardRepository.save(cashCardWithOwner);
 		URI locationOfNewCashCard = ucb.path("cashcards/{id}").buildAndExpand(savedCashCard.id()).toUri();
 		return ResponseEntity.created(locationOfNewCashCard).build();
 	}
