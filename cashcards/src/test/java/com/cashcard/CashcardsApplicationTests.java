@@ -56,7 +56,7 @@ class CashCardApplicationTests {
     @Test
     @DirtiesContext
     void shouldCreateANewCashCard() {
-       CashCard newCashCard = new CashCard(null, 250.00, null);
+        CashCard newCashCard = new CashCard(null, 250.00, "kumar2");
        ResponseEntity<Void> createResponse = restTemplate
     		   .withBasicAuth("lakshay", "abc123")
     		   .postForEntity("/cashcards", newCashCard, Void.class);
@@ -69,11 +69,13 @@ class CashCardApplicationTests {
        assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
        
        DocumentContext documentContext = JsonPath.parse(getResponse.getBody());
-       Number id = documentContext.read("$.id");
-       Double amount = documentContext.read("$.amount");
+        Number id = documentContext.read("$.id");
+        Double amount = documentContext.read("$.amount");
+        String owner = documentContext.read("$.owner");
 
-       assertThat(id).isNotNull();
-       assertThat(amount).isEqualTo(250.00);
+        assertThat(id).isNotNull();
+        assertThat(amount).isEqualTo(250.00);
+        assertThat(owner).isEqualTo("lakshay");
     }
     
     @Test
