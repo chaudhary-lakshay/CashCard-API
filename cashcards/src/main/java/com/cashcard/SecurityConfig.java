@@ -1,7 +1,9 @@
 package com.cashcard;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.User;
@@ -11,22 +13,24 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.context.annotation.Profile;
 
 @Configuration
 class SecurityConfig {
 
     @Bean
-    @Profile("!dev")
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(request -> request
+                .requestMatchers("/", "/index.html", "/static/**")
+                .permitAll()
                 .requestMatchers("/cashcards/**")
                 .hasRole("CARD-OWNER")
-                .requestMatchers("/", "/index.html", "/static/**").permitAll()
-                )
+                .anyRequest()
+                .authenticated()
+            )
             .httpBasic(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable());
+
         return http.build();
     }
 
@@ -37,27 +41,37 @@ class SecurityConfig {
 
     @Bean
     @Profile("!dev")
-    UserDetailsService testOnlyUsers(PasswordEncoder passwordEncoder) {
-        User.UserBuilder users = User.builder();
-        
-        UserDetails sarah = users
-            .username("lakshay")
-            .password(passwordEncoder.encode("abc123"))
-            .roles("CARD-OWNER") 
-            .build();
-        
-        UserDetails hankOwnsNoCards = users
-            .username("hank-owns-no-cards")
-            .password(passwordEncoder.encode("qrs456"))
-            .roles("NON-OWNER")
-            .build();
+    UserDetailsService testOnlyUsers(
+            PasswordEncoder passwordEncoder,
+            @Value("${cashcard.users.sarah.username}") String sarahUsername,
+            @Value("${cashcard.users.sarah.password}") String sarahPassword,
+            @Value("${cashcard.users.hank.username}") String hankUsername,
+            @Value("${cashcard.users.hank.password}") String hankPassword,
+            @Value("${cashcard.users.kumar.username}") String kumarUsername,
+            @Value("${cashcard.users.kumar.password}") String kumarPassword) {
 
-        UserDetails kumar = users
-            .username("kumar2")
-            .password(passwordEncoder.encode("xyz789"))
-            .roles("CARD-OWNER")
-            .build();
+        UserDetails sarah = User.builder()
+                .username(sarahUsername)
+                .password(passwordEncoder.encode(sarahPassword))
+                .roles("CARD-OWNER")
+                .build();
 
-        return new InMemoryUserDetailsManager(sarah, hankOwnsNoCards, kumar);
+        UserDetails hank = User.builder()
+                .username(hankUsername)
+                .password(passwordEncoder.encode(hankPassword))
+                .roles("NON-OWNER")
+                .build();
+
+        UserDetails kumar = User.builder()
+                .username(kumarUsername)
+                .password(passwordEncoder.encode(kumarPassword))
+                .roles("CARD-OWNER")
+                .build();
+
+        return new InMemoryUserDetailsManager(
+                sarah,
+                hank,
+                kumar
+        );
     }
 }
